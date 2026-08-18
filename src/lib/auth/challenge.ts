@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
+import { secureCookies } from "./session";
 
 // WebAuthn challenges ride in a short-lived signed cookie between the
 // options call and the verify call — no server-side challenge table needed.
@@ -20,7 +21,7 @@ export async function storeChallenge(challenge: string, purpose: "register" | "l
   const store = await cookies();
   store.set(CHALLENGE_COOKIE, token, {
     httpOnly: true,
-    secure: true,
+    secure: secureCookies(),
     sameSite: "lax",
     path: "/",
     maxAge: 300,

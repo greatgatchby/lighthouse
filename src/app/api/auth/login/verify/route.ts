@@ -1,5 +1,5 @@
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db, tables } from "@/db";
 import { consumeChallenge } from "@/lib/auth/challenge";
@@ -13,10 +13,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "challenge expired" }, { status: 400 });
   }
 
+  const rp = rpID();
   const [stored] = await db
     .select()
     .from(tables.webauthnCredentials)
-    .where(eq(tables.webauthnCredentials.id, body.id))
+    .where(
+      and(eq(tables.webauthnCredentials.id, body.id), eq(tables.webauthnCredentials.rpId, rp)),
+    )
     .limit(1);
   if (!stored) {
     return NextResponse.json({ error: "unknown credential" }, { status: 400 });
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
       response: body,
       expectedChallenge: challenge,
       expectedOrigin: expectedOrigin(),
-      expectedRPID: rpID(),
+      expectedRPID: rp,
       credential: {
         id: stored.id,
         publicKey: new Uint8Array(stored.publicKey),

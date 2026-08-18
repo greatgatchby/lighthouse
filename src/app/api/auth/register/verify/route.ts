@@ -1,4 +1,5 @@
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db, tables } from "@/db";
 import { consumeChallenge } from "@/lib/auth/challenge";
@@ -12,9 +13,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "challenge expired" }, { status: 400 });
   }
 
+  const rp = rpID();
   const existing = await db
     .select({ id: tables.webauthnCredentials.id })
-    .from(tables.webauthnCredentials);
+    .from(tables.webauthnCredentials)
+    .where(eq(tables.webauthnCredentials.rpId, rp));
   const currentUserId = await sessionUserId();
   if (existing.length > 0 && !currentUserId) {
     return NextResponse.json({ error: "registration closed" }, { status: 403 });
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
       response: body,
       expectedChallenge: challenge,
       expectedOrigin: expectedOrigin(),
-      expectedRPID: rpID(),
+      expectedRPID: rp,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 400 });
@@ -49,6 +52,7 @@ export async function POST(request: Request) {
   await db.insert(tables.webauthnCredentials).values({
     id: credential.id,
     userId,
+    rpId: rp,
     publicKey: Buffer.from(credential.publicKey),
     counter: credential.counter,
     transports: credential.transports ?? [],

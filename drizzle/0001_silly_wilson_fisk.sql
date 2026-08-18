@@ -1,0 +1,1 @@
+ALTER TABLE "webauthn_credentials" ADD COLUMN "rp_id" text DEFAULT 'localhost' NOT NULL;

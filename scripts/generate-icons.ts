@@ -84,11 +84,18 @@ function draw(size: number, maskable: boolean): Uint8Array {
       const v = y / size;
       // background
       blend(px, i, INK);
-      // light beams: two cones from the lamp
+      // light beams: two cones from the lamp, fading with distance.
+      // Flat-opacity amber over navy mixes to a muddy olive, so the alpha has
+      // to fall off or the beams read as a solid bowtie.
       const dy = v - lampY;
       const dxl = u - cx;
-      if (Math.abs(dy) < 0.05 * scale + Math.abs(dxl) * 0.28 && Math.abs(dxl) > 0.09 * scale) {
-        blend(px, i, BEAM);
+      const spread = Math.abs(dxl);
+      if (Math.abs(dy) < 0.045 * scale + spread * 0.3 && spread > 0.09 * scale) {
+        const reach = 0.46 * scale;
+        const falloff = Math.max(0, 1 - spread / reach);
+        if (falloff > 0) {
+          blend(px, i, [BEAM[0], BEAM[1], BEAM[2], Math.round(96 * falloff * falloff)]);
+        }
       }
       // sea line
       if (v > seaY && v < seaY + 0.02 * scale && Math.abs(dxl) < 0.34 * scale) {

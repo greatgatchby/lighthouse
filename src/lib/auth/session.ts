@@ -9,6 +9,12 @@ function secret(): Uint8Array {
   return new TextEncoder().encode(env.sessionSecret);
 }
 
+/** Safari refuses Secure cookies over http://localhost, so mirror the scheme.
+ * Any real deployment is HTTPS (tailscale serve), where this stays true. */
+export function secureCookies(): boolean {
+  return env.appUrl.startsWith("https://");
+}
+
 export async function createSessionToken(userId: string): Promise<string> {
   return new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: "HS256" })
@@ -32,7 +38,7 @@ export async function establishSession(userId: string): Promise<void> {
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: true,
+    secure: secureCookies(),
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_DAYS * 24 * 60 * 60,

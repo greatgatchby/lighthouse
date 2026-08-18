@@ -33,6 +33,10 @@ export const webauthnCredentials = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     publicKey: bytea("public_key").notNull(),
+    // WebAuthn scopes credentials to the relying-party ID (the hostname).
+    // Stored so the first-run registration gate can ask "do we have a passkey
+    // for THIS origin?" — otherwise moving localhost → tailnet locks you out.
+    rpId: text("rp_id").notNull().default("localhost"),
     counter: bigint("counter", { mode: "number" }).notNull().default(0),
     transports: jsonb("transports").$type<string[]>(),
     deviceType: text("device_type"),

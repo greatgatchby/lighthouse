@@ -67,7 +67,14 @@ export default function LoginPage() {
   return (
     <div className="pt-safe mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 pb-16">
       <div className="mb-10 text-center">
-        <div className="text-6xl">🗼</div>
+        {/* the generated beacon icon, not an emoji — 🗼 is the Tokyo Tower */}
+        <img
+          src="/icons/icon-192.png"
+          alt=""
+          width={88}
+          height={88}
+          className="mx-auto rounded-2xl"
+        />
         <h1 className="mt-4 text-3xl font-bold tracking-tight">Lighthouse</h1>
         <p className="mt-1 text-sm text-(--color-fog)">Your private harbour</p>
       </div>

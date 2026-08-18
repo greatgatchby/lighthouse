@@ -1,4 +1,5 @@
 import { generateRegistrationOptions } from "@simplewebauthn/server";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db, tables } from "@/db";
 import { storeChallenge } from "@/lib/auth/challenge";
@@ -9,7 +10,14 @@ import { rpID } from "@/lib/env";
 // or from an authenticated session (adding another passkey/device).
 
 export async function POST() {
-  const existing = await db.select({ id: tables.webauthnCredentials.id }).from(tables.webauthnCredentials);
+  const rp = rpID();
+  // Scope the bootstrap gate to this origin: a passkey registered against
+  // localhost can't authenticate on the tailnet hostname, so that origin must
+  // still be allowed to enroll its first credential.
+  const existing = await db
+    .select({ id: tables.webauthnCredentials.id })
+    .from(tables.webauthnCredentials)
+    .where(eq(tables.webauthnCredentials.rpId, rp));
   const userId = await sessionUserId();
 
   if (existing.length > 0 && !userId) {
@@ -18,7 +26,7 @@ export async function POST() {
 
   const options = await generateRegistrationOptions({
     rpName: "Lighthouse",
-    rpID: rpID(),
+    rpID: rp,
     userName: "you",
     attestationType: "none",
     excludeCredentials: existing.map((c) => ({ id: c.id })),
