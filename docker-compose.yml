@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lighthouse
+      POSTGRES_PASSWORD: lighthouse
+      POSTGRES_DB: lighthouse
+    ports:
+      # 5433 on the host: 5432 is often taken by another project's Postgres.
+      # In-container services still talk to postgres:5432 over the compose network.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lighthouse -d lighthouse"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  migrate:
+    build: .
+    command: ["node", "migrate.js"]
+    environment:
+      DATABASE_URL: postgres://lighthouse:lighthouse@postgres:5432/lighthouse
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://lighthouse:lighthouse@postgres:5432/lighthouse
+      STORAGE_DIR: /app/storage
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build: .
+    command: ["node", "worker.js"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://lighthouse:lighthouse@postgres:5432/lighthouse
+      STORAGE_DIR: /app/storage
+      PGPASSWORD: lighthouse
+    volumes:
+      - ./storage:/app/storage
+      - ./backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
