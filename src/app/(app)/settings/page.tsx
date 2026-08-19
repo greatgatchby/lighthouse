@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { db, tables } from "@/db";
+import { isEnabled as isLunchflowEnabled } from "@/lib/providers/lunchflow";
+import { LunchflowAccounts } from "@/components/LunchflowAccounts";
 import { NotificationSetup } from "@/components/NotificationSetup";
 import { LogoutButton, SettingsControls } from "@/components/SettingsControls";
 import { Card, Pill, SectionTitle } from "@/components/ui";
@@ -11,6 +13,9 @@ export default async function SettingsPage() {
   const connections = await db.select().from(tables.providerConnections);
   const monzo = connections.find((c) => c.provider === "monzo");
   const lunchflow = connections.find((c) => c.provider === "lunchflow");
+  // A connection row only appears after a sync succeeds, so the key being
+  // present is what distinguishes "not configured" from "configured, not yet run".
+  const lunchflowConfigured = isLunchflowEnabled();
 
   return (
     <main>
@@ -47,16 +52,39 @@ export default async function SettingsPage() {
           <div>
             <div className="font-medium">Lunchflow</div>
             <div className="text-xs text-(--color-fog)">
-              {lunchflow?.status === "active"
-                ? "Synced nightly"
-                : "Set LUNCHFLOW_API_KEY in .env — syncs nightly"}
+              {!lunchflowConfigured
+                ? "Set LUNCHFLOW_API_KEY in .env — syncs nightly"
+                : lunchflow?.status === "error"
+                  ? "Last sync didn't go through — it'll try again tonight"
+                  : lunchflow?.status === "active"
+                    ? "Synced nightly at 02:30"
+                    : "Key set — first sync runs tonight at 02:30"}
             </div>
           </div>
-          <Pill tone={lunchflow?.status === "active" ? "sea" : "neutral"}>
-            {lunchflow?.status === "active" ? "active" : "via .env"}
+          <Pill
+            tone={
+              !lunchflowConfigured
+                ? "neutral"
+                : lunchflow?.status === "error"
+                  ? "amber"
+                  : lunchflow?.status === "active"
+                    ? "sea"
+                    : "beacon"
+            }
+          >
+            {!lunchflowConfigured
+              ? "not set"
+              : lunchflow?.status === "error"
+                ? "retrying"
+                : lunchflow?.status === "active"
+                  ? "active"
+                  : "ready"}
           </Pill>
         </div>
       </Card>
+
+      <SectionTitle>Which accounts sync</SectionTitle>
+      <LunchflowAccounts />
 
       <SectionTitle>Notifications</SectionTitle>
       <SettingsControls

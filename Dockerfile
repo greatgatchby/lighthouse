@@ -7,7 +7,9 @@ FROM node:24-alpine AS deps
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# hoisted linker: Next's standalone output traces real paths, and pnpm's
+# symlinked store makes it miss transitive deps like @swc/helpers
+RUN pnpm install --frozen-lockfile --node-linker=hoisted
 
 FROM node:24-alpine AS build
 RUN corepack enable

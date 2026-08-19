@@ -31,8 +31,12 @@ export async function POST() {
     attestationType: "none",
     excludeCredentials: existing.map((c) => ({ id: c.id })),
     authenticatorSelection: {
+      // Discoverable credential: one Face ID tap, no username to type.
       residentKey: "required",
-      userVerification: "preferred",
+      // Must be "required", not "preferred": the verifier below defaults to
+      // requireUserVerification: true, so anything less lets the browser skip
+      // biometrics and then fails verification with a confusing error.
+      userVerification: "required",
     },
   });
 

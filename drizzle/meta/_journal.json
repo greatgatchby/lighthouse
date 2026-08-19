@@ -15,6 +15,13 @@
       "when": 1787088311471,
       "tag": "0001_silly_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787126617487,
+      "tag": "0002_big_annihilus",
+      "breakpoints": true
     }
   ]
 }

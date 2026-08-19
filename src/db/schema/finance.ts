@@ -43,6 +43,11 @@ export const accounts = pgTable(
     balanceUpdatedAt: timestamp("balance_updated_at", { withTimezone: true }),
     isPrimary: boolean("is_primary").notNull().default(false),
     closed: boolean("closed").notNull().default(false),
+    // Per-account sync opt-out. Lunchflow in particular exposes every account
+    // it can see, and you rarely want all of them in here. Sync jobs must skip
+    // accounts where this is false; discovery still records them so they can
+    // be switched on later.
+    syncEnabled: boolean("sync_enabled").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("accounts_provider_unique").on(t.provider, t.providerAccountId)],

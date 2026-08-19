@@ -7,7 +7,9 @@ export async function POST() {
   // Discoverable credentials: no allowCredentials — one Face ID tap, no username
   const options = await generateAuthenticationOptions({
     rpID: rpID(),
-    userVerification: "preferred",
+    // Matches requireUserVerification: true on the verify side (see
+    // register/options for why "preferred" breaks).
+    userVerification: "required",
   });
   await storeChallenge(options.challenge, "login");
   return NextResponse.json(options);

@@ -120,6 +120,12 @@ select count(*), min(posted_at) from transactions;
 If `min(posted_at)` is only ~90 days back, the window was missed. Disconnect, reconnect, and be
 ready to tap approve.
 
+**Choosing which accounts sync.** Lunchflow exposes every account it can see, which is rarely what
+you want in here. Settings → *Which accounts sync* lists them with a toggle; only enabled accounts
+have their transactions pulled. Newly discovered accounts default to on, so a fresh connection
+works without setup. Switching one off never deletes anything — if it has already imported
+transactions, a separate, explicitly-labelled action removes them.
+
 **Cross-provider duplicates.** The same coffee arrives from Monzo *and* Lunchflow. Every row gets
 `dedupe_key = sha256(local day | amount | normalised merchant)`. Monzo is canonical; the Lunchflow
 twin is marked `superseded_by` rather than deleted, and a partial unique index makes the pairing
@@ -187,8 +193,13 @@ Test the restore before you need it.
 ```bash
 pnpm typecheck          # types
 pnpm build              # Next.js production build
-pnpm smoke              # 28 checks: dedupe invariants, safe-to-spend, ranking, FTS
+pnpm smoke              # 32 checks: dedupe invariants, payday maths, ranking, FTS
+pnpm http-smoke         # 31 checks: auth gating + every page and API route (needs the app running)
+pnpm shots [dir]        # authenticated screenshots of every page, via Chrome DevTools Protocol
 ```
+
+`http-smoke` and `shots` mint a session token directly with `SESSION_SECRET`, because WebAuthn
+can't be driven from a script. They exercise the real routes, proxy gating included.
 
 Then, on your phone:
 

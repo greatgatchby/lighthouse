@@ -1,6 +1,7 @@
 import { PgBoss, type Job } from "pg-boss";
+import { adoptBoss } from "@/lib/boss";
 import { env } from "@/lib/env";
-import { ALL_QUEUES } from "@/lib/queues";
+import { ALL_QUEUES, QUEUE_OPTIONS } from "@/lib/queues";
 import { jobs } from "./jobs";
 
 // The Lighthouse worker: one pg-boss instance, every scheduled/queued job.
@@ -12,8 +13,13 @@ async function main() {
 
   await boss.start();
 
+  // Jobs that enqueue follow-up work import enqueue() from @/lib/boss; hand it
+  // this instance so the worker doesn't open a second connection pool.
+  adoptBoss(boss);
+
   for (const queue of ALL_QUEUES) {
-    await boss.createQueue(queue);
+    // createQueue is an upsert, so policy changes here apply on restart
+    await boss.createQueue(queue, QUEUE_OPTIONS[queue] ?? {});
   }
 
   for (const job of jobs) {
