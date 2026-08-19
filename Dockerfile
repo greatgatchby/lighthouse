@@ -7,9 +7,7 @@ FROM node:24-alpine AS deps
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-# hoisted linker: Next's standalone output traces real paths, and pnpm's
-# symlinked store makes it miss transitive deps like @swc/helpers
-RUN pnpm install --frozen-lockfile --node-linker=hoisted
+RUN pnpm install --frozen-lockfile
 
 FROM node:24-alpine AS build
 RUN corepack enable
@@ -31,6 +29,9 @@ ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
 COPY --from=build /app/.next/standalone ./
+# Next's file tracing misses transitive deps that live inside pnpm's symlinked
+# store (e.g. @swc/helpers under next's own dir), so overlay the real tree.
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 COPY --from=build /app/dist/worker.js ./worker.js

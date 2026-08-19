@@ -23,6 +23,7 @@
     "@anthropic-ai/sdk": "^0.117.1",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.2",
+    "@swc/helpers": "^0.5.15",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.2.9",
     "next": "16.3.1",

@@ -17,6 +17,9 @@ importers:
       '@simplewebauthn/server':
         specifier: ^13.3.2
         version: 13.3.2
+      '@swc/helpers':
+        specifier: ^0.5.15
+        version: 0.5.23
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(pg@8.23.0)(postgres@3.4.9)
